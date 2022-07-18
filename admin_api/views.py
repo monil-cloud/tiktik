@@ -320,6 +320,7 @@ class BannerDetail(APIView):
             query['city'] = city
         if country['country'] != "":
             query['country'] = country
+        print(query)
         banner_data = db.banner.find(query).sort([('_id', -1)]).skip(skip).limit(limit)
         banner_data_count = db.banner.count_documents(query).sort([('_id', -1)])
         if banner_data_count == 0:
@@ -415,6 +416,86 @@ class BannerDetail(APIView):
     
     ''' gift '''
 
+    ''' spam resone '''
+class SpanResone(APIView):
+    '''
+    0 : pendding
+    1 : active
+    2 : deactive
+    '''
+    def get(self, request):
+        try:
+            status = int(request.GET.get('status', 0))
+            from_data = int(request.GET.get('from', 0))
+            to_data = int(request.GET.get('to', 5))
+        except:
+            status = 0
+            from_data = 0
+            to_data = 5
+        query = {'status': status}
+        data = db.spamDetail.find(query).sort([("_id", -1)]).skip(from_data).limit(to_data)
+        if data is None:
+            pass
+        else:
+            data_count = db.spamDetail.count_documents(query)
+            final_list = []
+            for data in data:
+                final_list.append([
+                    'id': str(data['_id']),
+                    'resone': data['resone'],
+                    'createOn': data['createOn'],
+                    'status': data['status']
+                ])
+            response_data = {'message': 'data found', 'data': final_list, 'penCount':data_count}
+            return JsonResponse(resopnse_data, status=200)
+
+    def post(self, request):
+        data= request.data
+        if 'resone' not in data and data['resone'] == "":
+            response_data = {'message': 'Enter valide resone'}
+            return JsonResponse(resopnse_data, status=404)
+        else:
+            on_date = datetime.datetime.now().isoformat()
+            query = {'status': 0, 'createOn': on_date, 'resone': data['resone']}
+            db.spamDetail.insert_one(query)
+            response_data = {'message': 'add spam resone'}
+            return JsonResponse(resopnse_data, status=200)
+
+    def patch(self, request):
+        data = request.data
+        if 'stauts' in data and data['status'] != "":
+            set_query = {'_id': ObjectId(data['id'])}
+            query = {}
+            if 'stauts' in data and data['status'] != "":
+                query['status'] = data['status']
+            if 'stauts' in data and data['status'] != "":
+                query['resone'] = data['resone']
+            update_data = db.spamDetail.update_one(
+                {set_query},
+                {query}
+            )
+            response_data = {'message': 'spam data update'}
+            return JsonResponse(resopnse_data, status=200)
+        else:
+             response_data = {'message': 'data not found'}
+            return JsonResponse(resopnse_data, status=404)
+
+    def Delete(self, request):
+        data = request.data
+        if 'id' in data and data['id'] != "":
+            set_query = {'_id': ObjectId(data['id'])}
+            find_data = db.spamDetail.find_one({"_id": ObjectId(data['id']))
+            if find_data is not None:
+                update_data = db.spamDetail.delete_one({"_id": ObjectId(data['id'])})
+                response_data = {'message': 'data update'}
+                return JsonResponse(resopnse_data, status=200)
+            else:
+                response_data = {'message': 'data not found'}
+                return JsonResponse(resopnse_data, status=404)
+        else:
+        response_data = {'message': 'select valide data'}
+            return JsonResponse(resopnse_data, status=422)
+         
 
 
           
